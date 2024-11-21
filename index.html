@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blur Ball</title>
+</head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Roboto', sans-serif;
+        background-color: #111;
+        color: #fff;
+    }
+
+    canvas {
+        border: 1px solid #fff;
+    }
+
+    .score {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 24px;
+    }
+</style>
+<body>
+    <div class="score"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+    <script>
+        const scoreEl = document.querySelector('.score');
+
+        let ball;
+        let paddleLeft, paddleRight;
+        let activePaddle;
+        let score = 0;
+
+        scoreFun();
+
+        function setup() {
+            createCanvas(800, 400);
+            ball = new Ball();
+            paddleLeft = new Paddle(10, "left");
+            paddleRight = new Paddle(width - 20, "right");
+            activePaddle = paddleRight;
+        }
+
+        function draw() {
+            // Fondo semitransparente para efecto de blur
+            background(0, 25); // Ajusta el segundo parámetro (25) para cambiar la intensidad del blur
+
+            // Mostrar paddles
+            paddleLeft.show();
+            paddleRight.show();
+
+            // Mover solo el paddle activo
+            if (activePaddle === paddleLeft) {
+                paddleLeft.autoMove(ball);
+            } else {
+                paddleRight.autoMove(ball);
+            }
+
+            // Mostrar y mover la pelota
+            ball.show();
+            ball.move();
+            ball.bounce(paddleLeft, paddleRight);
+
+            // Dibujar línea divisoria
+            stroke(255);
+            line(width / 2, 0, width / 2, height);
+        }
+
+        class Ball {
+            constructor() {
+                this.x = width / 2;
+                this.y = height / 2;
+                this.r = 10;
+                this.xSpeed = 5;
+                this.ySpeed = 3;
+            }
+
+            show() {
+                fill(255, 204, 0); // Color amarillo para la pelota
+                noStroke();
+                ellipse(this.x, this.y, this.r * 2);
+            }
+
+            move() {
+                this.x += this.xSpeed;
+                this.y += this.ySpeed;
+
+                // Rebote en los bordes superior e inferior
+                if (this.y - this.r < 0 || this.y + this.r > height) {
+                    this.ySpeed *= -1;
+                }
+            }
+
+            bounce(paddleLeft, paddleRight) {
+                if (this.x - this.r < paddleLeft.x + paddleLeft.w &&
+                    this.y > paddleLeft.y &&
+                    this.y < paddleLeft.y + paddleLeft.h) {
+                    this.xSpeed *= -1;
+                    this.x = paddleLeft.x + paddleLeft.w + this.r;
+                    activePaddle = paddleRight;
+                    scoreFun();
+                }
+
+                if (this.x + this.r > paddleRight.x &&
+                    this.y > paddleRight.y &&
+                    this.y < paddleRight.y + paddleRight.h) {
+                    this.xSpeed *= -1;
+                    this.x = paddleRight.x - this.r;
+                    activePaddle = paddleLeft;
+                }
+
+                if (this.x < 0 || this.x > width) {
+                    this.reset();
+                }
+            }
+
+            reset() {
+                this.x = width / 2;
+                this.y = height / 2;
+                this.xSpeed = random([-5, 5]);
+                this.ySpeed = random([-3, 3]);
+                activePaddle = paddleRight;
+            }
+        }
+
+        class Paddle {
+            constructor(x, side) {
+                this.x = x;
+                this.y = height / 2 - 50;
+                this.w = 10;
+                this.h = 100;
+                this.speed = 5;
+                this.side = side;
+            }
+
+            show() {
+                fill(255);
+                noStroke();
+                rect(this.x, this.y, this.w, this.h);
+            }
+
+            autoMove(ball) {
+                if (ball.y < this.y + this.h / 2) {
+                    this.y -= this.speed;
+                } else if (ball.y > this.y + this.h / 2) {
+                    this.y += this.speed;
+                }
+                this.x += random(-1, 1);
+                this.x = constrain(this.x, 0, width - this.w);
+                this.y = constrain(this.y, 0, height - this.h);
+            }
+        }
+
+        function scoreFun() {
+            scoreEl.innerHTML = `
+            <h1>Score: ${score}</h1>
+            `;
+            score++;
+        }
+    </script>
+</body>
+
+</html>
